@@ -4,9 +4,9 @@ import logging
 import string
 import datetime
 import subprocess
-import schedule
 import time
-from urllib import request
+from pythonping import ping
+
 
 interface="wlp6s0"
 def random_mac():
@@ -52,6 +52,54 @@ def reconnect():
             'is_recurring': True,
             'currency': 'eur',
             'locales': {
+                'en': {
+                    'description_1': '<ul><li>Unlimited broadband <strong>Internet</strong></li></ul>',
+                    'description_2': '<ul><li><strong>Without commitment</strong></li><li>You can connect 2 devices simultaneously.</li><li>Immediate access</li><li>No cancellation fees</li><li>Payment of the first month prorated</li></ul>',
+                    'description_3': 'This offer is without obligation, without cancellation fees and can be activated in a few minutes!',
+                    'name': 'Liberty Pack',
+                },
+                'de': {
+                    'description_1': '<ul><li><strong>Bretiband-Internet</strong> unbegrenzt</li></ul>',
+                    'description_2': '<ul><li><strong>Ohne Engagement</strong></li><li>Sie können 2 Geräte gleichzeitig anschließen.</li><li>Sofortiger Zugriff</li><li>Ohne Terminierungsentgelte</li><li>Die Zahlung der ersten Monate anteilig</li></ul>',
+                    'description_3': 'Dieses Angebot ist unverbindlich, kostenlos und in wenigen Minuten aktivierbar!',
+                    'name': 'Freiheit Abo',
+                },
+                'es': {
+                    'description_1': '<ul><li><strong>Internet</strong> ilimitado</li></ul>',
+                    'description_2': '<ul><li><strong>Sin compromiso</strong></li><li>Puede conectar 2 dispositivos al mismo tiempo.</li><li>Acceso inmediato</li><li>Sin cargos de terminación</li><li>El pago del 1er mes prorrateado</li></ul>',
+                    'description_3': 'Esta oferta es sin compromiso, sin gastos de cancelación y puede activarse en unos minutos.',
+                    'name': 'Oferta Libertad',
+                },
+                'fr': {
+                    'description_1': '<ul><li><strong>Internet</strong> haut débit illimité</li></ul>',
+                    'description_2': '<ul><li><strong>Sans engagement</strong></li><li>Vous pouvez connecter 2 appareils simultanément.</li><li>Accès immédiat</li><li>Sans frais de résiliation</li><li>Paiement du 1er mois au prorata</li></ul>',
+                    'description_3': 'Cette offre est sans engagement, sans frais de résiliation et activable en quelques minutes!',
+                    'name': 'Abonnement Liberté',
+                },
+                'it': {
+                    'description_1': None,
+                    'description_2': None,
+                    'description_3': None,
+                    'name': None,
+                },
+                'nl': {
+                    'description_1': '<ul><li><strong>Internet</strong> onbeperkt breedband</li></ul>',
+                    'description_2': '<ul><li><strong>zonder inzet</strong></li><li>U kunt 2 apparaten tegelijk aansluiten.</li><li>onmiddellijke toegang</li><li>Zonder opzegging kosten</li><li>Betaling van 1e maand naar rato</li></ul>',
+                    'description_3': 'Dit aanbod is vrijblijvend, zonder annuleringskosten en kan in enkele minuten worden geactiveerd!',
+                    'name': 'Liberty Pack',
+                },
+                'pt': {
+                    'description_1': None,
+                    'description_2': None,
+                    'description_3': None,
+                    'name': None,
+                },
+                'zh': {
+                    'description_1': '<ul><li>无限宽带<strong>网络</strong> </li></ul>',
+                    'description_2': '<ul><li><strong>无需签约</strong></li><li>您可以同时连接2个设备</li><li>立即上网</li><li>无撤销费用</li><li>首月按比例支付</li></ul>',
+                    'description_3': '这个优惠是没有义务的，没有取消费用，而且可以在几分钟内激活!',
+                    'name': '自由订阅',
+                },
             },
             'signature': 'U2FsdGVkX19mButKWY+AOotv0OzszXztP5wJIHP09tRP7LmN6oPabDuDXyPL5v0/\nTNwWY9j/J43qJ5+iQWbreg==',
             'internal_name': 'Liberté 12,90€ x2 devices',
@@ -99,16 +147,19 @@ def reconnect():
     print("reconnected")
 
 def check_connection():
-    # flolep.fr
     try:
-        m=request.urlopen('http://8.8.8.8', timeout=5)
-        return not "wifirst" in m.url
-    except: 
+        return ping('1.1.1.1',timeout=0.3,count=1).success()
+    except Exception as e:
+        print("2>",e)
         return False
 
-reconnect()
 while True:
-    time.sleep(1)
     if not check_connection():
-        reconnect()
-        time.sleep(2)
+        try:
+            print('reconnecting')
+            reconnect()
+            time.sleep(5)
+        except Exception as e:
+            print("1>",e)
+            time.sleep(2)
+    time.sleep(1)
