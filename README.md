@@ -5,7 +5,7 @@ This Python script is designed to automatically connect to a WiFi network named 
 ## Requirements
 
 - Python 3.x
-- `requests` library
+- `requests` & `pythonping` library
 - `macchanger` utility (installed on the system)
 - `nmcli` utility (installed on the system)
 
@@ -14,7 +14,7 @@ This Python script is designed to automatically connect to a WiFi network named 
 1. Install the required Python libraries:
 
 ```
-pip install requests
+pip install requests pythonping
 sudo apt install macchanger network-manager
 sudo pacman -S macchanger network-manager
 ```
@@ -26,7 +26,7 @@ sudo pacman -S macchanger network-manager
 1. Run the script:
 
 ```
-python script.py
+sudo python script.py
 ```
 
 The script will automatically connect to the "Valence Briffaut" WiFi network and monitor the connection. If the connection is lost, it will randomize the MAC address, create a new temporary account, and reconnect to the network.
@@ -35,7 +35,7 @@ The script will automatically connect to the "Valence Briffaut" WiFi network and
 
 1. The script defines a function `random_mac()` that disables the specified network interface (`wlp6s0`), changes the MAC address using `macchanger`, and then re-enables the interface and connects to the "Valence Briffaut" WiFi network.
 
-2. The `get_token()` function fetches a token from a specific URL (`https://wireless.wifirst.net/index.txt`).
+2. The `get_token()` function fetches a token from  (`https://wireless.wifirst.net/index.txt`).
 
 3. The `randomstring()` function generates a random string of specified length.
 
@@ -45,7 +45,7 @@ The script will automatically connect to the "Valence Briffaut" WiFi network and
    - Posts the account information to the WiFi network's API endpoint.
    - Sends a login request to the WiFi network's login page.
 
-5. The `check_connection()` function checks if the current connection is to the WiFi network by sending a request to `http://8.8.8.8` and checking if the URL contains "wifirst".
+5. The `check_connection()` function checks if the current connection is to the WiFi network by sending a ping to `1.1.1.1`.
 
 6. The script enters a loop where it continuously checks the connection status using `check_connection()`. If the connection is lost, it calls `reconnect()` to reconnect to the WiFi network.
 
