@@ -4,6 +4,7 @@ import subprocess
 import time
 from tqdm import tqdm
 import dns.resolver
+import re
 
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -33,17 +34,31 @@ class Interface:
             if not self.is_connected():
                 print("reconnecting")
                 self.reconnect()
+                time.sleep(3)
             time.sleep(1)
     def random_mac(self):
-        subprocess.call(["sudo","ip","link","set","dev",self.name,"down"],timeout=5)
-        time.sleep(0.5)
-        subprocess.call(["sudo","macchanger","-a",self.name],timeout=5)
-        self.new_mac=time.time()
-        time.sleep(0.5)
-        subprocess.call(["sudo","ip","link","set","dev",self.name,"up"],timeout=5)
+        # subprocess.call(["sudo","ip","link","set","dev",self.name,"down"],timeout=5)
+        # time.sleep(0.5)
+        # subprocess.call(["sudo","macchanger","-a",self.name],timeout=5)
+        # self.new_mac=time.time()
+        # time.sleep(0.5)
+        # subprocess.call(["sudo","ip","link","set","dev",self.name,"up"],timeout=5)
+        # deconection wifi
+        subprocess.call(["nmcli","d","disconnect",self.name],timeout=5)
         for _ in tqdm(range(10),desc="Reconnectiong Wifi"):
             try:
                 subprocess.call(["nmcli","d","wifi","connect","Valence Briffaut","ifname",self.name],timeout=30)
+                # wait until dns query is possible
+                for _ in range(30):
+                    try:
+                        dns_resolver = dns.resolver.Resolver()
+                        dns_resolver.timeout = 1
+                        dns_resolver.lifetime = 1
+                        dns_resolver.resolve("wireless.wifirst.net")
+                        return
+                    except Exception as e:
+                        print(e)
+                    time.sleep(1)
                 return
             except Exception as e:
                 print("exception:",e)
@@ -55,15 +70,22 @@ class Interface:
                 # DNS_resolver.timeout = 1
                 # DNS_resolver.lifetime = 1
                 # DNS_resolver.resolve("wireless.wifirst.net")
-                res=subprocess.check_output(["sudo","-u","flo","nping","-c","10","--rate","5","173.88.8.254","-e",self.name],stderr=subprocess.DEVNULL,timeout=3,encoding="utf-8")
-                # print(res)
-                return not ("Failed: 0" in res or "Lost: 0" in res) and not "Network is unreachable" in res
+                # "173.88.8.254"
+                count=30
+                res=subprocess.check_output(["sudo","-u","flo","nping","-c",str(count),"--rate","10","173.88.8.254","--debug"],stderr=subprocess.DEVNULL,timeout=(count/10)*1.5,encoding="utf-8")
+                print(res)
+                failed= re.search(r"(?:Failed|Lost): (\d+)",res).group(1)
+                int_res=int(failed)
+                if "Network is unreachable" in res:
+                    self.random_mac()
+                    return False
+                return int_res>count/3
             return False
         except Exception as e:
             print("EEEEE:",e)
             return False
     def reconnect(self):
-        if time.time()-self.last_reco<5 and time.time()-self.new_mac>60:
+        if time.time()-self.last_reco<10 and time.time()-self.new_mac>60:
             self.random_mac()
         date=datetime.datetime.now()
         timestamp=int(date.timestamp()*1000)
@@ -84,5 +106,56 @@ class Interface:
 
 III="wlp0s20f0u5"
 III="wlp6s0"
+III="wlan0"
 # III="wlp10s0"
 interface=Interface(III)
+
+
+
+
+
+def change_route(_old:str=None,_new:str=None):
+    if isinstance(_old,Interface):
+        _old=_old.name
+    if isinstance(_new,Interface):
+        _new=_new.name
+    if _old:
+        subprocess.call([
+            "sudo",
+            "ifmetric",
+            str(_old),
+            str(100)
+        ])
+    if _new:
+        subprocess.call([
+            "sudo",
+            "ifmetric",
+            str(_new),
+            str(10)
+        ])
+
+
+
+# interfaces=list(map(Interface,interface_names))
+# for index,i in enumerate(interfaces):
+#     change_route(i.name)
+
+# time.sleep(1)
+# last_interface_connected=None
+# try:
+#     while True:
+#         time.sleep(0.1)
+#         if last_interface_connected and last_interface_connected.connected:
+#             continue
+#         #choose random interface that is connected
+#         interfaces_with_internet=[i for i in interfaces if i.connected]
+#         if interfaces_with_internet:
+#             choosen=random.choice(interfaces_with_internet)
+#             #switch interfaces priority
+#             change_route(last_interface_connected,choosen)
+#             last_interface_connected=choosen
+#             print("Switch to",choosen)
+# except Exception as e:
+#     print(e)
+#     for i in interfaces:
+#         i.end()
